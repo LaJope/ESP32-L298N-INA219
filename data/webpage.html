@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru" class="js-focus-visible">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>Панель управления барабанной установкой</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body style="background-color: #eeeeee">
+    <header>
+      <div class="header fixed-top">
+        <div class="header-title">Панель управления</div>
+        <div class="time-and-date">
+          <div class="heading">Дата</div>
+          <div class="header-data" id="DATE">дд/мм/гггг</div>
+          <div class="heading">Время</div>
+          <div class="header-data" id="TIME">00:00:00</div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="container">
+        <div class="top-row">
+          <div class="category">
+            <div class="category-title">Показания датчиков</div>
+            <div>
+              <table>
+                <tr>
+                  <th colspan="1" class="heading" style="font-size: 20px">
+                    Измерение
+                  </th>
+                  <th colspan="1" class="heading" style="font-size: 20px">
+                    Показание датчика
+                  </th>
+                </tr>
+                <tr>
+                  <td class="table-text">RPM (от 0 до 255)</td>
+                  <td class="table-data" id="RPM">0</td>
+                </tr>
+                <tr>
+                  <td class="table-text">Напряжение</td>
+                  <td class="table-data" id="VOLT">0</td>
+                </tr>
+                <tr>
+                  <td class="table-text">Сила тока</td>
+                  <td class="table-data" id="CURR">0</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <div class="category" style="gap: 10px 0px">
+            <div class="category-title">Задание параметров</div>
+            <div class="param-div">
+              <div class="category-text">
+                Скорость вращения барабана (<span id="RPM-SPAN">0</span>)
+              </div>
+              <input
+                type="range"
+                class="rpm-slider"
+                min="0"
+                max="100"
+                value="0"
+                width="0%"
+                id="RPM-SLIDE"
+                onpointerdown="RPMSliderPointerDown(checkSpeed(this.value))"
+                onpointerup="RPMSliderPointerUp(checkSpeed(this.value))"
+                onpointermove="RPMSliderPointerMove(checkSpeed(this.value))"
+              />
+              <input
+                type="number"
+                class="rpm-input"
+                min="0"
+                max="100"
+                value="0"
+                id="RPM-INPUT"
+                oninput="UpdateRPMInput(checkSpeed(this.value))"
+              />
+              <button type="button" class="rpm-button" id="RPM-INPUT-BUTTON" onclick="UpdateRPMInputButton()">
+                Обновить скорость
+              </button>
+            </div>
+            <div class="param-div">
+              <div class="category-text">Время вращения барабана</div>
+              <input
+                type="number"
+                class="time-input"
+                min="0"
+                max="17"
+                value="0"
+                placeholder="час"
+                id="TIME-HOUR"
+                oninput="UpdateHour(this.value)"
+              />
+              <span>:</span>
+              <input
+                type="number"
+                class="time-input"
+                min="0"
+                max="59"
+                value="0"
+                placeholder="мин"
+                id="TIME-MIN"
+                oninput="UpdateMin(this.value)"
+              />
+              <span>:</span>
+              <input
+                type="number"
+                class="time-input"
+                min="0"
+                max="59"
+                value="0"
+                placeholder="сек"
+                id="TIME-SEC"
+                oninput="UpdateSec(this.value)"
+              />
+              <div class="time-control">
+                <button
+                  type="button"
+                  class="time-button"
+                  id="TIME-BUTTON"
+                  onclick="UpdateTimerButton()"
+                >
+                  Задать время
+                </button>
+                <button
+                  type="button"
+                  class="time-button"
+                  id="TIME-DIS-BUTTON"
+                  onclick="DisableTimerButton()"
+                  disabled="true"
+                >
+                  Сбросить
+                </button>
+              </div>
+              <div class="time-left">
+                Осталось времени: <span id="TIME-LEFT">00:00:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="category">
+          <div class="category-title">Графики</div>
+          <div class="chart">
+            <div>Скорость мотора</div>
+            <canvas id="RPM-CHART" style="width:100%;max-width:600px"></canvas>
+          </div>
+          <div class="chart">
+            <div>Напряжение</div>
+            <canvas id="VOLT-CHART" style="width:100%;max-width:600px"></canvas>
+          </div>
+          <div class="chart">
+            <div>Сила тока</div>
+            <canvas id="CURR-CHART" style="width:100%;max-width:600px"></canvas>
+          </div>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <div class="footer control-panel fixed-bottom">
+        <div>
+          <div class="control-el">
+            <button type="button" class="control-button" id="STATE-BUTTON" onclick="StateButton()">
+              Старт
+            </button>
+            <button type="button" class="control-button" id="REVERSE-BUTTON" onclick="ReverseButton()" disabled="true">
+              Смена направления вращения
+            </button>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+  <script type="text/javascript" src="chart.js"></script>
+  <script type="text/javascript" src="script.js"></script>
+</html>
