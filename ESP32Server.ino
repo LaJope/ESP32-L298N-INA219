@@ -66,7 +66,7 @@ void setup() {
   disableCore1WDT();
 
   Motor.SetupPins();
-  // Sensor.SetupINA219();
+  Sensor.SetupINA219();
 
 #ifdef ESP_DEBUG
   WiFi.begin(LOCAL_SSID, LOCAL_PASS);
