@@ -126,11 +126,11 @@ void WebSocketEvent(byte num, WStype_t type, uint8_t* payload, size_t length) {
 
   case WStype_DISCONNECTED:
     Serial.println("Client Disconnected");
+    Motor.SetSpeed(0);
     break;
 
   case WStype_CONNECTED:
     Serial.println("Client Connected");
-    Motor.SetSpeed(0);
     break;
 
   case WStype_TEXT:
