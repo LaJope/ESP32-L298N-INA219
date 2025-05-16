@@ -6,10 +6,10 @@ const uint8_t CENTRIFUGE_SPEED_SHIFT = 154;
 
 // Для создания web-приложения.
 #include <WiFi.h>
-// github: me-no-dev/AsyncWebServer скачать, распаковать и положить в папку Arduino/libraries
+// github: ESP32Async/ESPAsyncWebServer скачать, распаковать и положить в папку Arduino/libraries
 #include <ESPAsyncWebServer.h>
 
-// github: me-no-dev/AsyncTCP скачать, распаковать и положить в папку Arduino/libraries
+// github: ESP32Async/AsyncTCP скачать, распаковать и положить в папку Arduino/libraries
 // github: me-no-dev/arduino-esp32fs-plugin скачать, распаковать и положить в папку Arduino/tools/ (Arduino/tools/ESP32FS/tool/...).
 // Положить все файлы html, css и тд. в папку data, расположенную в папке проекта. 
 // Затем в Arduino IDE 1.* (На данный момент (16.07.24) не работает с 2.*) нажать tools -> ESP32 Sketch Data Upload
@@ -28,7 +28,7 @@ const uint8_t CENTRIFUGE_SPEED_SHIFT = 154;
 // Чтобы перейти к собственной точке доступа ESP закомментируйте #define строку
 #define ESP_DEBUG
 const char* LOCAL_SSID = "DancingCow";
-const char* LOCAL_PASS = "perfectwe";
+const char* LOCAL_PASS = "perfectwe1";
 
 // С этими данными будет создана точка доступа.
 const char* APP_SSID = "Управление Барабаном";
@@ -43,8 +43,8 @@ C_INA219_Sensor Sensor;
 C_Timer Timer;
 
 // Используется для отправки сообщений между сервером и клиентом по веб-сокетам.
-StaticJsonDocument<1000> doc_tx; // Отправка сообщений клиенту
-StaticJsonDocument<200> doc_rx; // Получение сообщений от клиента
+JsonDocument doc_tx; // Отправка сообщений клиенту
+JsonDocument doc_rx; // Получение сообщений от клиента
 
 // IP адрес для дебага
 IPAddress Actual_IP;
@@ -60,28 +60,39 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("Starting setup");
   SPIFFS.begin();
 
   // Отключить перезапуск ESP32 при отсутствии сигнала.
   disableCore1WDT();
 
+  Serial.println("Motor setup");
   Motor.SetupPins();
+  Serial.println("Done");
+
+  Serial.println("Sensor setup");
   Sensor.SetupINA219();
+  Serial.println("Done");
 
 #ifdef ESP_DEBUG
+  Serial.println("Connecting to access point. debug");
   WiFi.begin(LOCAL_SSID, LOCAL_PASS);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
+  Serial.println("Connected");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 #endif
 
 #ifndef ESP_DEBUG
+  Serial.println("Starting access point");
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(APP_SSID, APP_PASS);
   delay(500);
   WiFi.softAPConfig(PageIP, gateway, subnet);
   delay(100);
+  Serial.println("Done");
 #endif
 
   server.on("/", HTTP_GET, SendWebsite);
@@ -90,6 +101,7 @@ void setup() {
   webSocket.begin();
   webSocket.onEvent(WebSocketEvent);
   server.begin();
+  Serial.println("Setup done");
 }
 
 void loop() {
