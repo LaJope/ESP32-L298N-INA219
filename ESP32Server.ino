@@ -61,10 +61,21 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 void setup() {
   Serial.begin(115200);
   Serial.println("Starting setup");
-  SPIFFS.begin();
 
   // Отключить перезапуск ESP32 при отсутствии сигнала.
   disableCore1WDT();
+
+  if (!SPIFFS.begin(true)) {
+    Serial.println("SPIFFS Mount Failed. Attempting to format...");
+    if (SPIFFS.format()) {
+      Serial.println("SPIFFS Formatted Successfully!");
+      ESP.restart();
+    } else {
+      Serial.println("SPIFFS Format Failed!");
+    }
+  } else {
+    Serial.println("SPIFFS Mounted Successfully!");
+  }
 
   Serial.println("Motor setup");
   Motor.SetupPins();
@@ -120,15 +131,15 @@ void SendWebsite(AsyncWebServerRequest* request) {
 }
 
 void SendJson() {
+  doc_tx["RPM"] = (Motor.GetSpeed() != 0 ? Motor.GetSpeed() - CENTRIFUGE_SPEED_SHIFT : 0);
+  // std::pair<float, float> sensorData = Sensor.GetSensorData();
+  doc_tx["VOLT"] = 2; //sensorData.first;
+  doc_tx["CURR"] = 3; //sensorData.second;
+  doc_tx["MOTOR_STATE"] = (Motor.GetState() ? "ON" : "OFF");
+  doc_tx["TIMER_STATE"] = (Timer.GetState() ? "ON" : "OFF");
+  doc_tx["TIME_LEFT"] = Timer.GetTimeRemaining();
+
   String jsonString = "";
-  JsonObject jsonMessage = doc_tx.to<JsonObject>();
-  jsonMessage["RPM"] = (Motor.GetSpeed() != 0 ? Motor.GetSpeed() - CENTRIFUGE_SPEED_SHIFT : 0);
-  std::pair<float, float> sensorData = Sensor.GetSensorData();
-  jsonMessage["VOLT"] = sensorData.first;
-  jsonMessage["CURR"] = sensorData.second;
-  jsonMessage["MOTOR_STATE"] = (Motor.GetState() ? "ON" : "OFF");
-  jsonMessage["TIMER_STATE"] = (Timer.GetState() ? "ON" : "OFF");
-  jsonMessage["TIME_LEFT"] = Timer.GetTimeRemaining();
   serializeJson(doc_tx, jsonString);
   webSocket.broadcastTXT(jsonString);
 }
@@ -154,6 +165,7 @@ void WebSocketEvent(byte num, WStype_t type, uint8_t* payload, size_t length) {
     String messageType = String(doc_rx["type"]);
 
     if (messageType == "CHANGE-STATE") {
+      Serial.println("Got CHANGE-STATE message");
       Motor.SwitchState();
       if (Motor.GetState()) {
         Timer.RefreshStartTime();
@@ -163,18 +175,22 @@ void WebSocketEvent(byte num, WStype_t type, uint8_t* payload, size_t length) {
       }
     }
     if (messageType == "CHANGE-ROTATION") {
+      Serial.println("Got CHANGE-ROTATION message");
       Motor.ProcessReverse();
     }
     if (messageType == "CHANGE-SPEED") {
+      Serial.println("Got CHANGE-SPEED message");
       uint8_t newSpeed = int(doc_rx["speed"]) + CENTRIFUGE_SPEED_SHIFT;
       Motor.SetSpeed(newSpeed);
     }
     if (messageType == "UPDATE-TIMER") {
+      Serial.println("Got UPDATE-TIMER message");
       Timer.SetTime(doc_rx["hours"], doc_rx["minutes"], doc_rx["seconds"]);
       Timer.RefreshStartTime();
       Timer.SetState(true);
     }
     if (messageType == "DISABLE-TIMER") {
+      Serial.println("Got DISABLE-TIMER message");
       Timer.SetState(false);
       Timer.SetTime(0, 0, 0);
     }
