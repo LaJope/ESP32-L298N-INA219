@@ -14,9 +14,15 @@ const uint8_t CENTRIFUGE_SPEED_SHIFT = 154;
 // Положить все файлы html, css и тд. в папку data, расположенную в папке проекта. 
 // Затем в Arduino IDE 1.* (На данный момент (16.07.24) не работает с 2.*) нажать tools -> ESP32 Sketch Data Upload
 
-// Либо mkspiffs.py
+// Либо mkspiffs.py:
+// В папке ESP32Server, где есть внутренняя папка "data" ввести 2 комманды
+//
 // mkspiffs -c ./data -b 4096 -p 256 -s 0x1E0000 spiffs.bin
 // esptool.py --port /dev/ttyUSB0 write_flash 0x210000 spiffs.bin
+//
+// Поменять /dev/ttyUSB0 на название порта (не знаю как на windows)
+// esptools должно быть где-то установлено с Arduino IDE
+// Partition scheme в инстументах в Arduino IDE поставить - "NO OTU"
 
 
 // Библиотека WebSockets by Markus Sattler
@@ -30,7 +36,9 @@ const uint8_t CENTRIFUGE_SPEED_SHIFT = 154;
 #include <Utils.h>
 
 // Используется для дебага.
-// Чтобы перейти к собственной точке доступа ESP закомментируйте #define строку
+// Чтобы перейти к собственной точке доступа ESP закомментировать #define строку
+// и поменять LOCAL_SSID/PASS на нужные
+
 // #define ESP_DEBUG
 const char* LOCAL_SSID = "DancingCow";
 const char* LOCAL_PASS = "perfectwe1";
