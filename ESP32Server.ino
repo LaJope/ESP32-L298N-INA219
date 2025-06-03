@@ -14,6 +14,11 @@ const uint8_t CENTRIFUGE_SPEED_SHIFT = 154;
 // Положить все файлы html, css и тд. в папку data, расположенную в папке проекта. 
 // Затем в Arduino IDE 1.* (На данный момент (16.07.24) не работает с 2.*) нажать tools -> ESP32 Sketch Data Upload
 
+// Либо mkspiffs.py
+// mkspiffs -c ./data -b 4096 -p 256 -s 0x1E0000 spiffs.bin
+// esptool.py --port /dev/ttyUSB0 write_flash 0x210000 spiffs.bin
+
+
 // Библиотека WebSockets by Markus Sattler
 #include <WebSocketsServer.h>
 
@@ -26,12 +31,12 @@ const uint8_t CENTRIFUGE_SPEED_SHIFT = 154;
 
 // Используется для дебага.
 // Чтобы перейти к собственной точке доступа ESP закомментируйте #define строку
-#define ESP_DEBUG
+// #define ESP_DEBUG
 const char* LOCAL_SSID = "DancingCow";
 const char* LOCAL_PASS = "perfectwe1";
 
 // С этими данными будет создана точка доступа.
-const char* APP_SSID = "Управление Барабаном";
+const char* APP_SSID = "Rotor-Control";
 const char* APP_PASS = "1234567890";
 
 // Задаёт время, через которое будет обнавляться информация с датчика тока.
@@ -57,6 +62,8 @@ IPAddress ip;
 
 AsyncWebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
+
+#include "Debug.h"
 
 void setup() {
   Serial.begin(115200);
@@ -104,6 +111,12 @@ void setup() {
   WiFi.softAPConfig(PageIP, gateway, subnet);
   delay(100);
   Serial.println("Done");
+  Serial.print("SSID: ");
+  Serial.println(APP_SSID);
+  Serial.print("PASSWORD: ");
+  Serial.println(APP_PASS);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.softAPIP());
 #endif
 
   server.on("/", HTTP_GET, SendWebsite);
@@ -113,6 +126,9 @@ void setup() {
   webSocket.onEvent(WebSocketEvent);
   server.begin();
   Serial.println("Setup done");
+
+  printPartitionTable();
+  printSpiffsSFiles();
 }
 
 void loop() {
@@ -132,9 +148,9 @@ void SendWebsite(AsyncWebServerRequest* request) {
 
 void SendJson() {
   doc_tx["RPM"] = (Motor.GetSpeed() != 0 ? Motor.GetSpeed() - CENTRIFUGE_SPEED_SHIFT : 0);
-  // std::pair<float, float> sensorData = Sensor.GetSensorData();
-  doc_tx["VOLT"] = 2; //sensorData.first;
-  doc_tx["CURR"] = 3; //sensorData.second;
+  auto [voltage, current] = Sensor.GetSensorData();
+  doc_tx["VOLT"] = voltage;
+  doc_tx["CURR"] = current;
   doc_tx["MOTOR_STATE"] = (Motor.GetState() ? "ON" : "OFF");
   doc_tx["TIMER_STATE"] = (Timer.GetState() ? "ON" : "OFF");
   doc_tx["TIME_LEFT"] = Timer.GetTimeRemaining();
@@ -165,7 +181,7 @@ void WebSocketEvent(byte num, WStype_t type, uint8_t* payload, size_t length) {
     String messageType = String(doc_rx["type"]);
 
     if (messageType == "CHANGE-STATE") {
-      Serial.println("Got CHANGE-STATE message");
+      // Serial.println("Got CHANGE-STATE message");
       Motor.SwitchState();
       if (Motor.GetState()) {
         Timer.RefreshStartTime();
@@ -175,22 +191,22 @@ void WebSocketEvent(byte num, WStype_t type, uint8_t* payload, size_t length) {
       }
     }
     if (messageType == "CHANGE-ROTATION") {
-      Serial.println("Got CHANGE-ROTATION message");
+      // Serial.println("Got CHANGE-ROTATION message");
       Motor.ProcessReverse();
     }
     if (messageType == "CHANGE-SPEED") {
-      Serial.println("Got CHANGE-SPEED message");
+      // Serial.println("Got CHANGE-SPEED message");
       uint8_t newSpeed = int(doc_rx["speed"]) + CENTRIFUGE_SPEED_SHIFT;
       Motor.SetSpeed(newSpeed);
     }
     if (messageType == "UPDATE-TIMER") {
-      Serial.println("Got UPDATE-TIMER message");
+      // Serial.println("Got UPDATE-TIMER message");
       Timer.SetTime(doc_rx["hours"], doc_rx["minutes"], doc_rx["seconds"]);
       Timer.RefreshStartTime();
       Timer.SetState(true);
     }
     if (messageType == "DISABLE-TIMER") {
-      Serial.println("Got DISABLE-TIMER message");
+      // Serial.println("Got DISABLE-TIMER message");
       Timer.SetState(false);
       Timer.SetTime(0, 0, 0);
     }
